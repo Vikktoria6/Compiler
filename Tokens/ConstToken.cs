@@ -24,7 +24,8 @@ namespace FG_Compiler.Tokens
         }
         public override string ToString()
         {
-            return Convert.ToString(type);
+
+            return Convert.ToString(type) + '-' + Convert.ToString(t_const);
         }
     }
 }

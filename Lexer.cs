@@ -11,7 +11,7 @@ namespace FG_Compiler
         public IOModule ioMod;
         private string lexem;
         private Token token;
-
+        static public Position pos;
         public Lexer(StreamReader reader)
         {
             this.ioMod = new IOModule(reader);
@@ -25,7 +25,8 @@ namespace FG_Compiler
 
         private bool isConst(string lexem, ref type_const type)
         {
-            if (lexem == "True" || lexem == "False")
+            if (lexem == "True" || lexem == "False" 
+                || lexem == "true" || lexem == "false")
             {
                 type = type_const.boolean;
                 return true;
@@ -46,6 +47,7 @@ namespace FG_Compiler
             {
                 bool dot = true;
                 if (Convert.ToInt32(lexem[0]) - 48 >= 0 && Convert.ToInt32(lexem[0]) - 48 <= 9)
+                {
                     for (int i = 1; i < lexem.Length; i++)
                     {
                         if (lexem[i] == '.')
@@ -53,12 +55,15 @@ namespace FG_Compiler
                             if ((Convert.ToInt32(lexem[i + 1] - 48) < 0 || Convert.ToInt32(lexem[i + 1]) - 48 > 9) || !dot)
                                 return false;
                             else i++;
+                            dot = false;
                         }
                         else if (Convert.ToInt32(lexem[i] - 48) < 0 || Convert.ToInt32(lexem[i]) - 48 > 9) return false;
                     }
-                type = type_const.real;
-                return true;
+                    type = type_const.real;
+                    return true;
+                }
             }
+            return false;
         }
 
         private bool true_symbol(char ch, int i)
@@ -80,39 +85,48 @@ namespace FG_Compiler
         }
 
 
-
-        public void GetToken()
+        public Token GetToken()
         {
-            
-            while (ioMod.endOfFile) 
+
+            if (ioMod.endOfFile)
             {
-                type_const type = type_const.real;
-                lexem = ioMod.GetLexeme();
-                token = null;
-                if (lexem == "") break;
+                try
+                {
+                    type_const type = type_const.real;
+                    lexem = ioMod.GetLexeme();
 
-                if (isKeyWord(lexem))
-                {
-                    token = new KeyWordToken(KeyWords.FindKW(lexem), ioMod.currentTextPos);
+                    token = null;
+                    
+
+                    if (isKeyWord(lexem))
+                    {
+                        token = new KeyWordToken(KeyWords.FindKW(lexem), pos);
+                    }
+                    else if (isConst(lexem, ref type))
+                    {
+                        token = new ConstToken(type, pos, lexem);
+                    }
+                    else if (isIdent(lexem))
+                    {
+                        token = new IdentToken(lexem, pos);
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
                 }
-                else if (isIdent(lexem))
+                catch
                 {
-                    token = new IdentToken(lexem, ioMod.currentTextPos);
+                    token = new UndefinedToken(lexem, pos);
+                    Error err = new Error(pos, "Лексическая ошибка");
+                    ioMod.errors.Add(err);
                 }
-                else if (isConst(lexem, ref type))
-                {
-                    token = new ConstToken(type, ioMod.currentTextPos, lexem);
-                }
-                else
-                {
-                    //ошибка
-                }
-                
                 if (token != null)
-                Console.WriteLine("lex= {0} -> {1}", lexem, token.ToString());
+                    Console.WriteLine("lex= {0} -> {1} {2}", lexem, token.ToString(), pos);
                 else Console.WriteLine("lex= {0} -> ", lexem);
+            }
 
-            } 
+            return token;
         }
     }
 }

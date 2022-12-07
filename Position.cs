@@ -9,7 +9,7 @@ namespace FG_Compiler
         public int pos_line; // номер строки
         public int pos_char; // номер позиции в строке
 
-        public Position(int line = 1, int ch = 0)
+        public Position(int ch = 0, int line = 1)
         {
             pos_line = line;
             pos_char = ch;
@@ -18,6 +18,11 @@ namespace FG_Compiler
         {
             pos_line = position.pos_line;
             pos_char = position.pos_line;
+        }
+
+        public override string ToString()
+        {
+            return "(" + pos_char + ", " + pos_line + ")";
         }
     }
 }

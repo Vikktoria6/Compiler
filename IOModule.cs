@@ -6,19 +6,10 @@ using System.IO;
 namespace FG_Compiler
 {
 
-    //struct Err      //ошибки
-    //{
-    //    public Position errorPosition = new Position();
-    //    public int errorCode;
-
-    //    public Err(Position errorPosition, int errorCode)
-    //    {
-    //        this.errorPosition = errorPosition;
-    //        this.errorCode = errorCode;
-    //    }
-    //}
+    
     class IOModule
     {
+        public List<Error> errors = new List<Error>();
         private StreamReader reader;
         public Position currentTextPos = new Position();
         private char currentChar;
@@ -36,6 +27,13 @@ namespace FG_Compiler
             currentTextPos.pos_char = 0;
         }
 
+        public void printError()
+        {
+            foreach (var err in errors)
+            {
+                Console.WriteLine(err);
+            }
+        }
         private bool CheckDoubleSymbol() {
             char nextSym = 'q';
             if (line != null)
@@ -45,7 +43,9 @@ namespace FG_Compiler
                     sym = line[currentTextPos.pos_char];
                     if (currentTextPos.pos_char + 1 < line.Length)
                         nextSym = line[currentTextPos.pos_char + 1];
-                    if (sym == '.' && int.TryParse(nextSym.ToString(), out int a))
+                    
+                    if (sym == '.' && (int.TryParse(nextSym.ToString(), out int a)
+                        || int.TryParse(currentChar.ToString(), out int b)))
                         return false;
                     foreach (var symbol in doubleSym)
                         if (sym == symbol) return true;
@@ -110,6 +110,7 @@ namespace FG_Compiler
         {
             currentChar = GetNextChar();
             while (currentChar == ' ' && endOfFile) currentChar = GetNextChar();
+            Lexer.pos = new Position(currentTextPos.pos_char - 1, currentTextPos.pos_line);
             if (isDoubleSymbol())
             {
                 if (lexeme == "//") currentChar = GetNextChar();
