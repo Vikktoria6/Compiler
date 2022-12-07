@@ -14,11 +14,6 @@ namespace FG_Compiler
         public Syntaxer(StreamReader reader)
         {
             this.LA = new Lexer(reader);
-            //while (LA.ioMod.endOfFile)
-            //{
-            //    curToken = LA.GetToken();
-            //}
-            //LA.ioMod.printError();
         }
 
         private void NextToken()
@@ -26,47 +21,126 @@ namespace FG_Compiler
             if (LA.ioMod.endOfFile) curToken = LA.GetToken();
             else curToken = null;
         }
-        private bool Accept(Keyword kw)
+
+        private bool Waiting(Keyword kw)
         {
             return (curToken is KeyWordToken cur_tok && cur_tok.kw == kw);
-            
+        }
+        private void Accept(Keyword kw)
+        {
+            if (!Waiting(kw))
+                throw new Error(curToken.Position, "Syntaxer error");
         }
 
-        private bool Accept(Token_type type)
+        private bool Waiting(Token_type type)
         {
             return (curToken.Type() == type && curToken != null);
         }
 
-        private void Constants()
+        private void Accept(Token_type type)
+        {
+            if (!Waiting(type))
+                throw new Error(curToken.Position, "Syntaxer error");
+        }
+
+        private void AcceptType(Token kwtoken)
         {
 
+            if (!Waiting(Keyword.Boolean) && !Waiting(Keyword.IntegerNumber) && !Waiting(Keyword.RealNumber) && !Waiting(Keyword.Char))
+                throw new Error(curToken.Position, "Syntaxer error");
+        }
+        private void Constants()
+        {
+            NextToken();
+            while (Waiting(Token_type.IDENT))
+            {
+                NextToken();
+                Accept(Keyword.OneEqual);
+                NextToken();
+                if (Waiting(Keyword.Minus)) NextToken();
+                Accept(Token_type.CONST);
+                NextToken();
+                Accept(Keyword.Semicolon);
+                NextToken();
+            };
         }
         private void Variables()
         {
             NextToken();
-            while (Accept(Token_type.IDENT))
+            while (Waiting(Token_type.IDENT))
             {
                 NextToken();
-                if (Accept)
+                while (Waiting(Keyword.Comma))
+                {
+                    NextToken();
+                    Accept(Token_type.IDENT);
+                    NextToken();
+                }
+                Accept(Keyword.Colon);
+                NextToken();
+                AcceptType(curToken);
+                NextToken();
+                Accept(Keyword.Semicolon);
+                NextToken();
             };
         }
 
-        private void Operators()
+        private void Multiplier()
         {
-            NextToken();
-            while (Accept(Token_type.IDENT))
+            if (Waiting(Keyword.OpenBracket))
             {
                 NextToken();
-                Accept(Token_type.CONST);
+                Expression();
+                Accept(Keyword.CloseBracket);
                 NextToken();
-            };
+            }
+            else if (Waiting(Token_type.IDENT)) NextToken();
+            else if (Waiting(Token_type.CONST)) NextToken();
+            else throw new Error(curToken.Position, "Syntaxer error");
+            
+        }
+        private void Term()
+        {
+            Multiplier();
+            while (Waiting(Keyword.Multiply) || Waiting(Keyword.Divide))
+            {
+                NextToken();
+                Multiplier();
+            }
+        }
+        private void Expression()
+        {
+            if (Waiting(Keyword.Minus)) NextToken();
+            Term();
+            while (Waiting(Keyword.Plus) || Waiting(Keyword.Minus))
+            {
+                NextToken();
+                Term();
+            }
+
+        }
+        private void Operator()
+        {
+            NextToken();
+            while (Waiting(Token_type.IDENT))
+            {
+                NextToken();
+                Accept(Keyword.Assign);
+                NextToken();
+                Expression();
+            }
         }
         private void Block()
         {
             NextToken();
-            if (Accept(Keyword.Constant)) Constants();
-            if (Accept(Keyword.Var)) Variables();
-            Operators();
+            if (Waiting(Keyword.Constant)) Constants();
+            if (Waiting(Keyword.Var)) Variables();
+            Accept(Keyword.Begin);
+            Operator();
+            while (Waiting(Keyword.Semicolon)) Operator();
+            Accept(Keyword.End);
+            NextToken();
+            Accept(Keyword.Dot);
         }
         private void Prog()
         {

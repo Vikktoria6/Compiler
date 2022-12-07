@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FG_Compiler
 {
-    class Error
+    class Error : Exception
     {
 
         //enum errcode + errcodemassage
@@ -12,7 +12,7 @@ namespace FG_Compiler
         public Position errorPosition = new Position();
         public string errorMsg;
 
-        public Error(Position errorPosition, string errorMsg)
+        public Error(Position errorPosition, string errorMsg) 
         {
             this.errorPosition = errorPosition;
             this.errorMsg = errorMsg;
