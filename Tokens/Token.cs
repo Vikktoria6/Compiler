@@ -21,7 +21,10 @@ namespace FG_Compiler
             type = Token_type.UNDEFINED;
         }
 
-        
+        public Token_type Type()
+        {
+            return type;
+        }
 
     }
 }

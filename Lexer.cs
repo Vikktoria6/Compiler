@@ -118,7 +118,7 @@ namespace FG_Compiler
                 catch
                 {
                     token = new UndefinedToken(lexem, pos);
-                    Error err = new Error(pos, "Лексическая ошибка");
+                    Error err = new Error(pos, "Лексическая ошибка", lexem);
                     ioMod.errors.Add(err);
                 }
                 if (token != null)

@@ -9,18 +9,25 @@ namespace FG_Compiler
 
         //enum errcode + errcodemassage
 
-        public Position errorPosition = new Position();
-        public string errorMsg;
+        private Position errorPosition = new Position();
+        private string errorMsg;
+        private string bit;
 
-        public Error(Position errorPosition, string errorMsg) 
+        public Error(Position errorPosition, string errorMsg)
         {
             this.errorPosition = errorPosition;
             this.errorMsg = errorMsg;
         }
+        public Error(Position errorPosition, string errorMsg, string bit) 
+        {
+            this.errorPosition = errorPosition;
+            this.errorMsg = errorMsg;
+            this.bit = bit;
+        }
 
         public override string ToString()
         {
-            return errorMsg + " " + errorPosition;           
+            return errorMsg + " " + errorPosition + bit;           
         }
     }
 }

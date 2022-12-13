@@ -11,7 +11,7 @@ namespace FG_Compiler
       
         public KeyWordToken(Keyword kw, Position position) : base(position, type)
         {
-            this.kw = kw;
+            this.kw = kw; 
             type = Token_type.KEYWORD;
         }
 
