@@ -37,15 +37,17 @@ namespace FG_Compiler
             else if (t is IdentToken id_tok) return GetTypeIdent(id_tok.ident);
             return type_const.integer;
         }
-        public void AddIdent(List <string> id, type_const type, Position pos)
+        public bool AddIdent(List <string> id, type_const type, Position pos)
         {
+            bool a = false;
             foreach (var i in id)
                 if (!ExistIden(i))
                 {
                     table.Add(i, type);
                     Console.WriteLine(" {0} {1}", i, type);
+                    a = true;
                 }
-                else throw new Error(pos, "Существующий идентификатор", i);
+            return a;
         }
 
         public bool AllowedTypes (List <type_const> list_types, type_const type)

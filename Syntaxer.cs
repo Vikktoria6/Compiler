@@ -8,16 +8,32 @@ namespace FG_Compiler
 {
     class Syntaxer
     {
-        private Lexer LA;
+        public Lexer LA;
         private Token curToken;
         private List <string> curIdent = new List<string>();
         private List<type_const> ListCurTypes = new List<type_const>();
         private Scope scp = new Scope();
         private type_const cur_type = type_const.integer;
+        private List<Keyword> starters = new List<Keyword>();
+        private List<Keyword> followers = new List<Keyword>();
         
         public Syntaxer(StreamReader reader)
         {
             this.LA = new Lexer(reader);
+        }
+
+        private bool IsBelong(List <Keyword> set)
+        {
+            return (curToken is KeyWordToken cur_tok && set.Contains(cur_tok.kw));
+        }
+
+        private void Skip()
+
+        {
+            while (curToken != null && !IsBelong(starters) && !IsBelong(followers))
+            {
+                NextToken();
+            }
         }
 
         private void CheckIdent()
@@ -25,7 +41,7 @@ namespace FG_Compiler
             if (curToken is IdentToken cur_tok)
             {
                 if (!scp.ExistIden(cur_tok.ident)) curIdent.Add(cur_tok.ident);
-                else throw new Error(cur_tok.Position, "Сeмантическая ошибка", cur_tok.ident);
+                else LA.ioMod.errors.Add(new Error(cur_tok.Position, "Семантическая ошибка2", cur_tok.ident));
             }
             
         }
@@ -35,7 +51,7 @@ namespace FG_Compiler
             if (curToken is IdentToken cur_tok)
             {
                 if (scp.ExistIden(cur_tok.ident)) ListCurTypes.Add(scp.DefineType(curToken));
-                else throw new Error(cur_tok.Position, "Сeмантическая ошибка", cur_tok.ident);
+                else LA.ioMod.errors.Add(new Error(cur_tok.Position, "Несоот", cur_tok.ident));
             }
             else ListCurTypes.Add(scp.DefineType(curToken));
         }
@@ -45,12 +61,15 @@ namespace FG_Compiler
         {
             if (curToken is ConstToken cur_tok)
             {
-                scp.AddIdent(curIdent, cur_tok.t_const, cur_tok.Position);
+                if (!scp.AddIdent(curIdent, cur_tok.t_const, cur_tok.Position))
+                    LA.ioMod.errors.Add(new Error(cur_tok.Position, "Существующий идентификатор"));
+                        
             }
             else if (curToken is KeyWordToken cur_tok2)
             {
                 type_const tc = scp.DefineType(curToken);
-                scp.AddIdent(curIdent, tc, cur_tok2.Position);
+                if (!scp.AddIdent(curIdent, tc, cur_tok2.Position))
+                    LA.ioMod.errors.Add(new Error(cur_tok2.Position, "Существующий идентификатор"));
             }
             curIdent.Clear();
         }
@@ -60,7 +79,7 @@ namespace FG_Compiler
             if (curToken is IdentToken cur_tok)
             {
                 if (scp.ExistIden(cur_tok.ident)) cur_type = scp.GetTypeIdent(cur_tok.ident);
-                else throw new Error(cur_tok.Position, "Сeмантическая ошибка", cur_tok.ident);
+                else LA.ioMod.errors.Add(new Error(cur_tok.Position, "Несуществующий идентификатор", cur_tok.ident));
             }
 
         }
@@ -74,10 +93,14 @@ namespace FG_Compiler
         {
             return (curToken is KeyWordToken cur_tok && cur_tok.kw == kw);
         }
-        private void Accept(Keyword kw)
+        private bool Accept(Keyword kw)
         {
             if (!Waiting(kw))
-                throw new Error(curToken.Position, "Syntaxer error");
+            {
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка", curToken.ToString()));
+                return false;
+            }
+            else return true;
         }
 
         private bool Waiting(Token_type type)
@@ -85,18 +108,25 @@ namespace FG_Compiler
             return (curToken.Type() == type && curToken != null);
         }
 
-        private void Accept(Token_type type)
+        private bool Accept(Token_type type)
         {
             if (!Waiting(type))
-                throw new Error(curToken.Position, "Syntaxer error");
+            {
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка", curToken.ToString()));
+                return false;
+            }
+            else return true;
         }
 
         private void AcceptType(Token kwtoken)
         {
             if (!Waiting(Keyword.Boolean) && !Waiting(Keyword.IntegerNumber) && !Waiting(Keyword.RealNumber) && !Waiting(Keyword.Char))
-                throw new Error(curToken.Position, "Syntaxer error");
-            
-           
+            {
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка", curToken.ToString()));
+                
+            }
+
+
         }
         private void Constants()
         {
@@ -105,14 +135,16 @@ namespace FG_Compiler
             {
                 CheckIdent();      
                 NextToken();
-                Accept(Keyword.OneEqual);
-                NextToken();
+                if (Accept(Keyword.OneEqual))
+                    NextToken();
                 if (Waiting(Keyword.Minus)) NextToken();
-                Accept(Token_type.CONST);
-                AddIdentIntoScope();
-                NextToken();
-                Accept(Keyword.Semicolon);
-                NextToken();
+                if (Accept(Token_type.CONST))
+                {
+                    AddIdentIntoScope();
+                    NextToken();
+                }
+                if (Accept(Keyword.Semicolon))
+                    NextToken();
             };
         }
         private void Variables()
@@ -125,108 +157,154 @@ namespace FG_Compiler
                 while (Waiting(Keyword.Comma))
                 {
                     NextToken();
-                    Accept(Token_type.IDENT);
                     CheckIdent();
+                    Accept(Token_type.IDENT);
                     NextToken();
                 }
-                Accept(Keyword.Colon);
-                NextToken();
+                if (Accept(Keyword.Colon))
+                    NextToken();
                 AcceptType(curToken);
                 AddIdentIntoScope();
                 NextToken();
-                Accept(Keyword.Semicolon);
-                NextToken();
+                if (Accept(Keyword.Semicolon))
+                    NextToken();
+                
             };
         }
 
         private void Multiplier()
         {
-            if (Waiting(Keyword.OpenBracket))
+            starters = new List<Keyword> { Keyword.OpenBracket };
+            if (IsBelong(starters) || curToken is ConstToken || curToken is IdentToken)
             {
-                NextToken();
-                Expression();
-                Accept(Keyword.CloseBracket);
-                NextToken();
-            }
-            else if (Waiting(Token_type.IDENT))
-            {
-                SearchType();
-                NextToken(); 
+                if (Waiting(Keyword.OpenBracket))
+                {
+                    NextToken();
+                    Expression();
+                    if (Accept(Keyword.CloseBracket))
+                        NextToken();
 
+                }
+                else if (Waiting(Token_type.IDENT))
+                {
+                    SearchType();
+                    NextToken();
+
+                }
+                else if (Waiting(Token_type.CONST))
+                {
+                    SearchType();
+                    NextToken();
+                }
             }
-            else if (Waiting(Token_type.CONST))
+            else
             {
-                SearchType();
-                NextToken();
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка"));
+                Skip();
             }
-            else throw new Error(curToken.Position, "Syntaxer error");
-            
+
         }
         private void Term()
         {
+            starters = new List<Keyword> { Keyword.Multiply, Keyword.Divide };
             Multiplier();
-            while (Waiting(Keyword.Multiply) || Waiting(Keyword.Divide))
             {
-                NextToken();
-                Multiplier();
+                while (Waiting(Keyword.Multiply) || Waiting(Keyword.Divide))
+                {
+                    NextToken();
+                    Multiplier();
+                }
             }
         }
         private void Expression()
         {
             if (Waiting(Keyword.Minus)) NextToken();
             Term();
-            while (Waiting(Keyword.Plus) || Waiting(Keyword.Minus))
+            starters = new List<Keyword> { Keyword.Minus, Keyword.Plus, Keyword.Semicolon };
+            followers = new List<Keyword> { Keyword.Semicolon };
+            if (IsBelong(starters) || curToken is IdentToken )
             {
-                NextToken();
-                Term();
+                while (Waiting(Keyword.Plus) || Waiting(Keyword.Minus))
+                {
+                    NextToken();
+                    Term();
+                }
+            }
+            else
+            {
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка1", curToken.ToString()));
+                Skip();
             }
 
         }
         private void Operator()
         {
-            NextToken();
             if (Waiting(Keyword.Begin)) SostOperator();
             else
             {
-                
                 while (Waiting(Token_type.IDENT))
                 {
                     ListCurTypes.Clear();
                     SetCurType();
                     NextToken();
-                    Accept(Keyword.Assign);
-                    NextToken();
+                    if (Accept(Keyword.Assign))
+                        NextToken();
                     Expression();
-                    scp.AllowedTypes(ListCurTypes, cur_type);
-                    
+                    if (!scp.AllowedTypes(ListCurTypes, cur_type))
+                        LA.ioMod.errors.Add(new Error(curToken.Position, "Несоответствие типов"));
+                    if (Accept(Keyword.Semicolon))
+                        NextToken();
                 }
             }
         }
 
         private void SostOperator()
         {
-            Accept(Keyword.Begin);
-            Operator();
-            while (Waiting(Keyword.Semicolon)) Operator();
-            Accept(Keyword.End);
-            NextToken();
+            starters = new List<Keyword> { Keyword.Begin };
+            if (IsBelong(starters))
+            {
+                if (Accept(Keyword.Begin))
+                    NextToken();
+                Operator();
+                while (Waiting(Keyword.Semicolon)) Operator();
+                if (Accept(Keyword.End))
+                    NextToken();
+                
+            }
+            else
+            {
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка2", curToken.ToString()));
+                Skip();
+            }
         }
         private void Block()
         {
-            NextToken();
-            if (Waiting(Keyword.Constant)) Constants();
-            if (Waiting(Keyword.Var)) Variables();
-            SostOperator();
+            starters = new List<Keyword> { Keyword.Constant, Keyword.Var, Keyword.Begin };
+            followers.Add(Keyword.Dot);
+            if (IsBelong(starters))
+            {
+                if (Waiting(Keyword.Constant)) Constants();
+                if (Waiting(Keyword.Var)) Variables();
+                SostOperator();
+            }
+            else {
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка3", curToken.ToString()));
+                Skip();
+            }
             Accept(Keyword.Dot);
         }
         private void Prog()
         {
-            Accept(Keyword.Program);
-            NextToken();
-            Accept(Token_type.IDENT);
-            NextToken();
-            Accept(Keyword.Semicolon);
-            Block();
+            starters = new List<Keyword> { Keyword.Program };
+            if (IsBelong(starters))
+            {
+                if (Accept(Keyword.Program)) NextToken();
+                if (Accept(Token_type.IDENT)) NextToken();
+                if (Accept(Keyword.Semicolon))
+                    NextToken();
+                Block();
+            }
+            else LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка4", curToken.ToString()));
         }
 
         public void StartBNF()

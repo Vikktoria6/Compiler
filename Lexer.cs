@@ -17,7 +17,6 @@ namespace FG_Compiler
             this.ioMod = new IOModule(reader);
 
         }
-
         private bool isKeyWord(string lexem)
         {
             return KeyWords.IsKW(lexem);
@@ -40,8 +39,12 @@ namespace FG_Compiler
             else
             if (int.TryParse(lexem, out int a))
             {
-                type = type_const.integer;
-                return true;
+                if (a <= 32767)
+                {
+                    type = type_const.integer;
+                    return true;
+                }
+                else return false;
             }
             else
             {
@@ -90,37 +93,30 @@ namespace FG_Compiler
 
             if (ioMod.endOfFile)
             {
-                try
+                type_const type = type_const.real;
+                lexem = ioMod.GetLexeme();
+                
+                token = null;
+                
+                if (isKeyWord(lexem))
                 {
-                    type_const type = type_const.real;
-                    lexem = ioMod.GetLexeme();
-
-                    token = null;
-                    
-
-                    if (isKeyWord(lexem))
-                    {
-                        token = new KeyWordToken(KeyWords.FindKW(lexem), pos);
-                    }
-                    else if (isConst(lexem, ref type))
-                    {
-                        token = new ConstToken(type, pos, lexem);
-                    }
-                    else if (isIdent(lexem))
-                    {
-                        token = new IdentToken(lexem, pos);
-                    }
-                    else
-                    {
-                        throw new Exception();
-                    }
+                    token = new KeyWordToken(KeyWords.FindKW(lexem), pos);
                 }
-                catch
+                else if (isConst(lexem, ref type))
+                {
+                    token = new ConstToken(type, pos, lexem);
+                }
+                else if (isIdent(lexem))
+                {
+                    token = new IdentToken(lexem, pos);
+                }
+                else
                 {
                     token = new UndefinedToken(lexem, pos);
                     Error err = new Error(pos, "Лексическая ошибка", lexem);
                     ioMod.errors.Add(err);
                 }
+
                 if (token != null)
                     Console.WriteLine("lex= {0} -> {1} {2}", lexem, token.ToString(), pos);
                 else Console.WriteLine("lex= {0} -> ", lexem);

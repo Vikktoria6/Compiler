@@ -6,7 +6,7 @@ namespace FG_Compiler
 {
     class Program
     {
-        
+        public Syntaxer syntax;
         static void Main(string[] args)
         {
             string path = "C:/Users/user/OneDrive/Рабочий стол/Pascal.txt";
@@ -14,6 +14,7 @@ namespace FG_Compiler
             {
                 Syntaxer syntax = new Syntaxer(reader);
                 syntax.StartBNF();
+                syntax.LA.ioMod.printError();
             }
             
         }
