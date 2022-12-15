@@ -41,7 +41,7 @@ namespace FG_Compiler
             if (curToken is IdentToken cur_tok)
             {
                 if (!scp.ExistIden(cur_tok.ident)) curIdent.Add(cur_tok.ident);
-                else LA.ioMod.errors.Add(new Error(cur_tok.Position, "Семантическая ошибка2", cur_tok.ident));
+                else LA.ioMod.errors.Add(new Error(cur_tok.Position, "Семантическая ошибка", cur_tok.ident));
             }
             
         }
@@ -51,7 +51,7 @@ namespace FG_Compiler
             if (curToken is IdentToken cur_tok)
             {
                 if (scp.ExistIden(cur_tok.ident)) ListCurTypes.Add(scp.DefineType(curToken));
-                else LA.ioMod.errors.Add(new Error(cur_tok.Position, "Несоот", cur_tok.ident));
+                else LA.ioMod.errors.Add(new Error(cur_tok.Position, "Семантическая ошибка", cur_tok.ident));
             }
             else ListCurTypes.Add(scp.DefineType(curToken));
         }
@@ -97,7 +97,7 @@ namespace FG_Compiler
         {
             if (!Waiting(kw))
             {
-                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка", curToken.ToString()));
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Отсутствует символ", Convert.ToString(kw)));
                 return false;
             }
             else return true;
@@ -112,7 +112,7 @@ namespace FG_Compiler
         {
             if (!Waiting(type))
             {
-                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка", curToken.ToString()));
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Отсутствует символ", Convert.ToString(type)));
                 return false;
             }
             else return true;
@@ -122,7 +122,7 @@ namespace FG_Compiler
         {
             if (!Waiting(Keyword.Boolean) && !Waiting(Keyword.IntegerNumber) && !Waiting(Keyword.RealNumber) && !Waiting(Keyword.Char))
             {
-                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка", curToken.ToString()));
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка"));
                 
             }
 
@@ -220,7 +220,7 @@ namespace FG_Compiler
         {
             if (Waiting(Keyword.Minus)) NextToken();
             Term();
-            starters = new List<Keyword> { Keyword.Minus, Keyword.Plus, Keyword.Semicolon };
+            starters = new List<Keyword> { Keyword.Minus, Keyword.Plus, Keyword.Semicolon, Keyword.CloseBracket };
             followers = new List<Keyword> { Keyword.Semicolon };
             if (IsBelong(starters) || curToken is IdentToken )
             {
@@ -232,7 +232,7 @@ namespace FG_Compiler
             }
             else
             {
-                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка1", curToken.ToString()));
+                LA.ioMod.errors.Add(new Error(curToken.Position, "Синтаксическая ошибка"));
                 Skip();
             }
 
@@ -311,6 +311,8 @@ namespace FG_Compiler
         {
             NextToken();
             Prog();
+
+            //while (LA.ioMod.endOfFile && LA.lexem != ".") NextToken();
         }
       
     }

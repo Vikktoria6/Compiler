@@ -27,7 +27,7 @@ namespace FG_Compiler
 
         public override string ToString()
         {
-            return errorMsg + " " + errorPosition + bit;           
+            return errorMsg + " " + errorPosition + " " + bit;           
         }
     }
 }

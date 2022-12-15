@@ -24,18 +24,17 @@ namespace FG_Compiler
 
         private bool isConst(string lexem, ref type_const type)
         {
-            if (lexem == "True" || lexem == "False" 
+            if (lexem == "True" || lexem == "False"
                 || lexem == "true" || lexem == "false")
             {
                 type = type_const.boolean;
                 return true;
             }
-            else
-            if (lexem[0] == '\'' && lexem[2] == '\'')
-            {
-                type = type_const.@char;
-                return true;
-            }
+            else if (lexem.Length == 3 && lexem[0] == '\'' && lexem[2] == '\'')
+                {
+                    type = type_const.@char;
+                    return true;
+                }
             else
             if (int.TryParse(lexem, out int a))
             {
@@ -113,12 +112,12 @@ namespace FG_Compiler
                 else
                 {
                     token = new UndefinedToken(lexem, pos);
-                    Error err = new Error(pos, "Лексическая ошибка", lexem);
+                    Error err = new Error(pos, "Неизвестные символы", lexem);
                     ioMod.errors.Add(err);
                 }
 
                 if (token != null)
-                    Console.WriteLine("lex= {0} -> {1} {2}", lexem, token.ToString(), pos);
+                    Console.WriteLine("lex= {0} -> {1}", lexem, token.ToString());
                 else Console.WriteLine("lex= {0} -> ", lexem);
             }
 

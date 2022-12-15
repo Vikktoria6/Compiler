@@ -22,7 +22,7 @@ namespace FG_Compiler
 
         public override string ToString()
         {
-            return "(" + pos_char + ", " + pos_line + ")";
+            return "(" + pos_line + ", " + pos_char + ")";
         }
     }
 }
