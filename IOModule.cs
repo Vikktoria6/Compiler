@@ -110,7 +110,7 @@ namespace FG_Compiler
         {
             currentChar = GetNextChar();
             while (currentChar == ' ' && endOfFile) currentChar = GetNextChar();
-            Lexer.pos = new Position(currentTextPos.pos_char - 1, currentTextPos.pos_line);
+            Lexer.pos = new Position(currentTextPos.pos_line, currentTextPos.pos_char - 1);
             if (isDoubleSymbol())
             {
                 return lexeme;
